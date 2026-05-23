@@ -298,7 +298,7 @@ function buildOverview(){
     <div class="premium-card p-5 lg:col-span-2">
       <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex justify-between">
         <span>Global Supply Chain Network</span>
-        <span class="text-blue-500">Live Infrastructure Mapping</span>
+        <span class="color:#FFE600;">Live Infrastructure Mapping</span>
       </div>
       <div id="map" class="w-full h-[320px] rounded-xl border border-slate-200 z-0"></div>
     </div>
@@ -354,11 +354,11 @@ function buildScenarios(){
       <td class="p-3.5 font-medium text-slate-600">${s.fx===83.25?'&mdash;':'₹'+s.fx}</td>
       <td class="p-3.5 font-medium text-slate-600">${s.fM===1?'&mdash;':'+20%'}</td>
       <td class="p-3.5 font-medium text-slate-600">${s.sf===0.043?'&mdash;':'+100bps'}</td>
-      <td class="p-3.5 font-bold ${uBad?'text-rose-500 bg-rose-50/40':'text-amber-600'}">${pct(r.uM)}</td>
-      <td class="p-3.5 font-bold ${hBad?'text-rose-500':'text-emerald-600 bg-emerald-50/40'}">${pct(r.hM)}</td>
+      <td class="p-3.5 font-bold ${uBad?'text-[#5A5A5A] bg-[#E5E7EB]':'text-[#5A5A5A]'}">${pct(r.uM)}</td>
+      <td class="p-3.5 font-bold ${hBad?'text-[#5A5A5A]':'text-[#FFE600] bg-[#FFF9CC]'}">${pct(r.hM)}</td>
       <td class="p-3.5 font-bold text-slate-700">₹${n2(r.totR)} Cr</td>
-      <td class="p-3.5 font-bold ${r.uHd<0?'text-rose-600':'text-slate-500'}">${r.uHd<0?'BREACH':'+₹'+n2(r.uHd)}</td>
-      <td class="p-3.5 font-bold ${r.hHd<0?'text-rose-600':'text-emerald-600'}">${r.hHd<0?'BREACH':'+₹'+n2(r.hHd)}</td>
+      <td class="p-3.5 font-bold ${r.uHd<0?'text-[#2E2E38]':'text-slate-500'}">${r.uHd<0?'BREACH':'+₹'+n2(r.uHd)}</td>
+      <td class="p-3.5 font-bold ${r.hHd<0?'text-[#2E2E38]':'text-[#FFE600]'}">${r.hHd<0?'BREACH':'+₹'+n2(r.hHd)}</td>
     </tr>`;
   }).join('');
   return`
@@ -433,28 +433,28 @@ function buildHedge(){
         <tbody class="divide-y divide-slate-100 text-sm font-medium">
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="p-4 text-slate-800">Asian Call Options</td><td class="p-4 text-slate-500">Iron Ore Fines</td>
-            <td class="p-4 text-center"><span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-bold">55%</span></td>
-            <td class="p-4 text-slate-500 text-center">50-70%</td><td class="p-4 text-right text-emerald-600 font-semibold">Active (GIFT City)</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-[#FFF9CC] text-[#2E2E38] rounded-md text-xs font-bold">55%</span></td>
+            <td class="p-4 text-slate-500 text-center">50-70%</td><td class="p-4 text-right text-[#FFE600] font-semibold">Active (GIFT City)</td>
           </tr>
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="p-4 text-slate-800">Zero-Cost Collar</td><td class="p-4 text-slate-500">Coking Coal</td>
-            <td class="p-4 text-center"><span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-bold">50%</span></td>
-            <td class="p-4 text-slate-500 text-center">45-60%</td><td class="p-4 text-right text-emerald-600 font-semibold">Active</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-[#FFF9CC] text-[#2E2E38] rounded-md text-xs font-bold">50%</span></td>
+            <td class="p-4 text-slate-500 text-center">45-60%</td><td class="p-4 text-right text-[#FFE600] font-semibold">Active</td>
           </tr>
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="p-4 text-slate-800">NMDC Domestic Shift</td><td class="p-4 text-slate-500">Structural FX Offset</td>
-            <td class="p-4 text-center"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-bold">20%</span></td>
-            <td class="p-4 text-slate-500 text-center">15-20%</td><td class="p-4 text-right text-blue-600 font-semibold">Embedded Policy</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-[#E5E7EB] text-[#2E2E38] rounded-md text-xs font-bold">20%</span></td>
+            <td class="p-4 text-slate-500 text-center">15-20%</td><td class="p-4 text-right text-[#2E2E38] font-semibold">Embedded Policy</td>
           </tr>
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="p-4 text-slate-800">FX Forward Sales</td><td class="p-4 text-slate-500">USD Export Revenue</td>
-            <td class="p-4 text-center"><span class="px-2 py-1 bg-rose-100 text-rose-700 rounded-md text-xs font-bold">0%</span></td>
-            <td class="p-4 text-slate-500 text-center">75% (M1-3)</td><td class="p-4 text-right text-amber-600 font-semibold">Pending ISDA Clearance</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-[#2E2E38] text-[#FFE600] rounded-md text-xs font-bold">0%</span></td>
+            <td class="p-4 text-slate-500 text-center">75% (M1-3)</td><td class="p-4 text-right text-[#5A5A5A] font-semibold">Pending ISDA Clearance</td>
           </tr>
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="p-4 text-slate-800">Interest Rate Swap</td><td class="p-4 text-slate-500">$150M Term Loan</td>
-            <td class="p-4 text-center"><span class="px-2 py-1 bg-rose-100 text-rose-700 rounded-md text-xs font-bold">0%</span></td>
-            <td class="p-4 text-slate-500 text-center">60% ($90M)</td><td class="p-4 text-right text-amber-600 font-semibold">Scheduled Month 3</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-[#2E2E38] text-[#FFE600] rounded-md text-xs font-bold">0%</span></td>
+            <td class="p-4 text-slate-500 text-center">60% ($90M)</td><td class="p-4 text-right text-[#5A5A5A] font-semibold">Scheduled Month 3</td>
           </tr>
         </tbody>
       </table>
@@ -486,20 +486,20 @@ function buildFX(){
           <div class="space-y-4">
             <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
                 <span class="text-sm font-semibold text-slate-600">Gross Export Inflows</span>
-                <span class="text-base font-bold text-emerald-600">$620M</span>
+                <span class="text-base font-bold text-[#FFE600]">$620M</span>
             </div>
             <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
                 <span class="text-sm font-semibold text-slate-600">Gross Import Cost</span>
-                <span class="text-base font-bold text-rose-500">$480M</span>
+                <span class="text-base font-bold text-[#5A5A5A]">$480M</span>
             </div>
-            <div class="flex justify-between items-center p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <span class="text-sm font-bold text-blue-800">Net Natural Hedge Long</span>
-                <span class="text-lg font-black text-blue-700">+$140M</span>
+            <div class="flex justify-between items-center p-4 bg-[#FFF9CC] rounded-lg border border-[#FFE600]">
+                <span class="text-sm font-bold text-[#2E2E38]">Net Natural Hedge Long</span>
+                <span class="text-lg font-black text-[#2E2E38]">+$140M</span>
             </div>
           </div>
         </div>
         <div class="text-[11px] text-slate-500 font-medium pt-3 mt-4">
-          <i class="ti ti-info-circle text-emerald-600"></i> INR depreciation is Net Positive at consolidated level. Commodity desk must reduce hedge ratios organically when USD/INR weakens.
+          <i class="ti ti-info-circle text-[#FFE600]"></i> INR depreciation is Net Positive at consolidated level. Commodity desk must reduce hedge ratios organically when USD/INR weakens.
         </div>
     </div>
   </div>
@@ -548,21 +548,21 @@ function buildKPIs(){
       <div class="space-y-6 ml-2">
         
         <div class="relative pl-6">
-            <div class="absolute left-0 top-1 w-3 h-3 bg-emerald-500 rounded-full ring-4 ring-emerald-100"></div>
+            <div class="absolute left-0 top-1 w-3 h-3 bg-emerald-500 rounded-full ring-4 ring-[#FFF9CC]"></div>
             <div class="absolute left-1.5 top-4 w-px h-full bg-slate-200"></div>
             <div class="text-sm font-bold text-slate-800">Board Policy Approval</div>
             <div class="text-xs text-slate-500 font-medium">Single Unified Commodity + FX Document (Month 1)</div>
         </div>
         
         <div class="relative pl-6">
-            <div class="absolute left-0 top-1 w-3 h-3 bg-rose-500 rounded-full ring-4 ring-rose-100"></div>
+            <div class="absolute left-0 top-1 w-3 h-3 bg-[#2E2E38] rounded-full ring-4 ring-rose-100"></div>
             <div class="absolute left-1.5 top-4 w-px h-full bg-slate-200"></div>
             <div class="text-sm font-bold text-slate-800">ISDA Execution (HDFC / StanChart)</div>
-            <div class="text-xs text-slate-500 font-medium text-rose-600 font-semibold">Blocking Prerequisite for FX/IRS trades (Month 1-2)</div>
+            <div class="text-xs text-slate-500 font-medium text-[#2E2E38] font-semibold">Blocking Prerequisite for FX/IRS trades (Month 1-2)</div>
         </div>
         
         <div class="relative pl-6">
-            <div class="absolute left-0 top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-blue-100"></div>
+            <div class="absolute left-0 top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-[#E5E7EB]"></div>
             <div class="absolute left-1.5 top-4 w-px h-full bg-slate-200"></div>
             <div class="text-sm font-bold text-slate-800">Nigeria B2B LC Architecture</div>
             <div class="text-xs text-slate-500 font-medium">Resolve trapped capital constraints (Month 2)</div>
@@ -783,20 +783,20 @@ function buildLiveCards(){
 
   el.innerHTML=`
   <div class="premium-card p-5 border-t-4 ${uBreach?'border-t-rose-500':'border-t-amber-500'} flex flex-col justify-between">
-    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unhedged Impact</div><div class="text-2xl font-bold mt-1 display-title ${uBreach?'text-rose-600':'text-slate-800'}">₹${r.uE.toFixed(1)} Cr</div></div>
-    <div class="text-xs font-semibold mt-2 ${uBreach?'text-rose-600 bg-rose-50 border border-rose-100 p-2 rounded-lg':'text-slate-500'}">${(r.uM*100).toFixed(2)}% Margin ${uBreach?'&bull; BREACH DEVIATION':''}</div>
+    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unhedged Impact</div><div class="text-2xl font-bold mt-1 display-title ${uBreach?'text-[#2E2E38]':'text-slate-800'}">₹${r.uE.toFixed(1)} Cr</div></div>
+    <div class="text-xs font-semibold mt-2 ${uBreach?'text-[#2E2E38] bg-rose-50 border border-rose-100 p-2 rounded-lg':'text-slate-500'}">${(r.uM*100).toFixed(2)}% Margin ${uBreach?'&bull; BREACH DEVIATION':''}</div>
   </div>
-  <div class="premium-card p-5 border-t-4 ${hBreach?'border-t-rose-500':'border-t-emerald-500'} flex flex-col justify-between">
-    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hedged Result</div><div class="text-2xl font-bold mt-1 display-title ${hBreach?'text-rose-600':'text-emerald-700'}">₹${r.hE.toFixed(1)} Cr</div></div>
-    <div class="text-xs font-semibold mt-2 ${hBreach?'text-rose-600 bg-rose-50 border border-rose-100 p-2 rounded-lg':'text-emerald-700 bg-emerald-50 border border-emerald-100 p-2 rounded-lg'}">${(r.hM*100).toFixed(2)}% Margin</div>
+  <div class="premium-card p-5 border-t-4 ${hBreach?'border-t-rose-500':'border-t-[#FFE600]'} flex flex-col justify-between">
+    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hedged Result</div><div class="text-2xl font-bold mt-1 display-title ${hBreach?'text-[#5a5a5a]':'text-[#FFE600]'}">₹${r.hE.toFixed(1)} Cr</div></div>
+    <div class="text-xs font-semibold mt-2 ${hBreach?'text-[#2E2E38] bg-rose-50 border border-rose-100 p-2 rounded-lg':'text-[#2E2E38] bg-[#FFF9CC] border border-[#FFE600] p-2 rounded-lg'}">${(r.hM*100).toFixed(2)}% Margin</div>
   </div>
   <div class="premium-card p-5 border-t-4 border-t-rose-400 flex flex-col justify-between">
-    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gross Portfolio Shock</div><div class="text-2xl font-bold mt-1 display-title text-rose-600">&minus;₹${r.tot.toFixed(1)} Cr</div></div>
+    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gross Portfolio Shock</div><div class="text-2xl font-bold mt-1 display-title text-[#2E2E38]">&minus;₹${r.tot.toFixed(1)} Cr</div></div>
     <div class="text-[10px] text-slate-500 font-medium mt-2 leading-relaxed">Ore: ₹${r.oreShk.toFixed(0)}Cr &bull; Coal: ₹${r.coalShk.toFixed(0)}Cr<br>Frt: ₹${r.frtShk.toFixed(0)}Cr &bull; Yld: ₹${r.intShk.toFixed(0)}Cr</div>
   </div>
-  <div class="premium-card p-5 border-t-4 ${hBreach?'border-t-rose-500':'border-t-emerald-500'} flex flex-col justify-between">
+  <div class="premium-card p-5 border-t-4 ${hBreach?'border-t-rose-500':'border-t-[#FFE600]'} flex flex-col justify-between">
     <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Covenant Threshold</div>
-    <div class="mt-2">${hBreach ? '<span class="text-xs font-bold bg-rose-100 text-rose-800 px-2.5 py-1 rounded border border-rose-200"><i class="ti ti-shield-alert"></i> BREACH</span>':'<span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded border border-emerald-200"><i class="ti ti-shield-check"></i> PROTECTED</span>'}</div></div>
+    <div class="mt-2">${hBreach ? '<span class="text-xs font-bold bg-rose-100 text-rose-800 px-2.5 py-1 rounded border border-rose-200"><i class="ti ti-shield-alert"></i> BREACH</span>':'<span class="text-xs font-bold bg-[#FFF9CC] text-[#2E2E38] px-2.5 py-1 rounded border border-[#FFE600]"><i class="ti ti-shield-check"></i> PROTECTED</span>'}</div></div>
     <div class="text-[10px] text-slate-400 font-semibold mt-2 uppercase tracking-wider">Headroom: ₹${r.hHd.toFixed(0)} Cr</div>
   </div>`;
 }
