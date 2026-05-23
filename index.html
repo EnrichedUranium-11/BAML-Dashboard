@@ -6,52 +6,138 @@
   <title>BAML CFO Risk Impact Dashboard</title>
   
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
-    :root {
-      --font-sans: 'Inter', sans-serif;
-      --font-display: 'Plus Jakarta Sans', sans-serif;
-      --ey-yellow: #FFE600;
-      --ey-dark: #2E2E38;
-    }
-    body { font-family: var(--font-sans); background: #f4f6f9; color: #1e293b; }
-    .display-title { font-family: var(--font-display); }
-    
-    /* Premium Glassmorphism */
-    .premium-card {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(226, 232, 240, 0.8);
-      box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.08), 0 2px 8px -1px rgba(148, 163, 184, 0.04);
-      border-radius: 16px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .premium-card:hover { box-shadow: 0 12px 24px -4px rgba(148, 163, 184, 0.12), 0 4px 12px -2px rgba(148, 163, 184, 0.06); }
-    
-    /* Sliders */
-    input[type=range] { -webkit-appearance: none; width: 100%; background: #e2e8f0; height: 6px; border-radius: 999px; }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: var(--ey-dark); border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; }
-    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); background: #000; }
-    
-    /* Heatmap */
-    .heat-cell { transition: all 0.15s ease; cursor: default; }
-    .heat-cell:hover { transform: scale(1.08); z-index: 10; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    
-    /* Nav */
-    .nav-btn { position: relative; transition: all 0.2s ease; }
-    .nav-btn::after { content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 3px; background: var(--ey-dark); transition: all 0.2s ease; transform: translateX(-50%); border-radius: 3px 3px 0 0; }
-    .nav-btn.active { color: #000; font-weight: 600; }
-    .nav-btn.active::after { width: 60%; }
+  :root {
+    --font-sans: 'Helvetica Now Display', Arial, sans-serif;
+    --font-display: 'Helvetica Now Display', Arial, sans-serif;
 
-    /* Custom Leaflet Map Styling */
-    .map-node { background: var(--ey-yellow); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(255, 230, 0, 0.5); }
-    .map-node-hq { background: var(--ey-dark); border: 2px solid var(--ey-yellow); border-radius: 50%; box-shadow: 0 0 12px rgba(0, 0, 0, 0.5); }
-  </style>
+    --ey-yellow: #FFE600;
+    --ey-black: #000000;
+    --ey-dark: #2E2E38;
+    --ey-grey: #6B7280;
+    --ey-lightgrey: #E5E7EB;
+    --ey-bg: #F4F6F9;
+  }
+
+  @font-face {
+    font-family: 'Helvetica Now Display';
+    src: url('HelveticaNowDisplay-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Helvetica Now Display';
+    src: url('HelveticaNowDisplay-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--ey-bg);
+    color: #111827;
+  }
+
+  .display-title {
+    font-family: var(--font-display);
+  }
+
+  .premium-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow:
+      0 4px 20px rgba(0,0,0,0.04),
+      0 1px 4px rgba(0,0,0,0.03);
+    border-radius: 16px;
+    transition: all 0.25s ease;
+  }
+
+  .premium-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 30px rgba(0,0,0,0.08),
+      0 2px 10px rgba(0,0,0,0.05);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: #D1D5DB;
+    height: 6px;
+    border-radius: 999px;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #000;
+    border: 2px solid #FFE600;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.08);
+  }
+
+  .heat-cell {
+    transition: all 0.15s ease;
+  }
+
+  .heat-cell:hover {
+    transform: scale(1.08);
+    z-index: 10;
+  }
+
+  .nav-btn {
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .nav-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    background: var(--ey-yellow);
+    transition: all 0.2s ease;
+    transform: translateX(-50%);
+    border-radius: 3px 3px 0 0;
+  }
+
+  .nav-btn.active {
+    color: #000;
+    font-weight: 700;
+  }
+
+  .nav-btn.active::after {
+    width: 60%;
+  }
+
+  .map-node {
+    background: var(--ey-yellow);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255,230,0,0.5);
+  }
+
+  .map-node-hq {
+    background: #000;
+    border: 2px solid var(--ey-yellow);
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  }
+</style>
 </head>
 <body class="p-4 md:p-8">
 
@@ -230,18 +316,30 @@ function buildOverview(){
 
 function buildRiskBars(){
   const items=[
-    {l:'Iron Ore Price Shock',v:179.8,max:250,c:'linear-gradient(90deg, #f87171, #ef4444)'},
-    {l:'Coal FX Delta Deviation',v:59.9,max:250,c:'linear-gradient(90deg, #fbbf24, #f59e0b)'},
-    {l:'Global Freight Premium (+20%)',v:40.5,max:250,c:'linear-gradient(90deg, #fbbf24, #f59e0b)'},
-    {l:'Yield Curve Adjustment (+1%)',v:12.5,max:250,c:'linear-gradient(90deg, #60a5fa, #3b82f6)'},
-    {l:'Ore Mitigation Capture',v:82.4,max:250,c:'linear-gradient(90deg, #34d399, #10b981)'},
-    {l:'NMDC Index Arbitrage',v:12.0,max:250,c:'linear-gradient(90deg, #34d399, #10b981)'},
+    {l:'Iron Ore Price Shock',v:179.8,max:250},
+    {l:'Coal FX Delta Deviation',v:59.9,max:250},
+    {l:'Global Freight Premium (+20%)',v:40.5,max:250},
+    {l:'Yield Curve Adjustment (+1%)',v:12.5,max:250},
+    {l:'Ore Mitigation Capture',v:82.4,max:250},
+    {l:'NMDC Index Arbitrage',v:12.0,max:250},
   ];
+
   return items.map(i=>`
     <div class="space-y-1">
-      <div class="flex justify-between text-xs font-medium"><span class="text-slate-600 text-[11px]">${i.l}</span><span class="text-slate-800 font-bold">₹${i.v.toFixed(1)} Cr</span></div>
-      <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-500" style="width:${Math.min(100,i.v/i.max*100)}%; background:${i.c}"></div></div>
-    </div>`).join('');
+      <div class="flex justify-between text-xs font-medium">
+        <span class="text-slate-700 text-[11px]">${i.l}</span>
+        <span class="text-black font-bold">₹${i.v.toFixed(1)} Cr</span>
+      </div>
+
+      <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+        <div class="h-full rounded-full transition-all duration-500"
+          style="
+            width:${Math.min(100,i.v/i.max*100)}%;
+            background:#FFE600">
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function buildScenarios(){
@@ -421,9 +519,9 @@ function buildKPIs(){
   ];
   
   const kpiHTML=kpis.map(k=>{
-    let bc = "bg-amber-100 text-amber-700";
-    if(k.s === 'green') bc = "bg-emerald-100 text-emerald-700";
-    if(k.s === 'red') bc = "bg-rose-100 text-rose-700";
+    let bc = "bg-[#FFE600] text-black";
+    if(k.s === 'green') bc = "bg-[#FFE600] text-black";
+    if(k.s === 'red') bc = "bg-[#2E2E38] text-white";
     
     return`<div class="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition">
       <div>
@@ -538,18 +636,18 @@ function initCharts(){
   if(activeTab==='overview'){
     const el=document.getElementById('wfChart');if(!el)return;
     const steps=[
-      {l:'Baseline',base:0,val:2146,c:'#2e2e38'},
-      {l:'Ore Shock',base:2146,val:-180,c:'#f87171'},
-      {l:'Coal FX',base:1966,val:-60,c:'#f87171'},
-      {l:'Freight',base:1906,val:-41,c:'#f87171'},
-      {l:'Yield Curve',base:1865,val:-18,c:'#f87171'},
-      {l:'Unhedged',base:0,val:1756,c:'#f59e0b'},
-      {l:'Ore Rec.',base:1756,val:87,c:'#34d399'},
-      {l:'NMDC',base:1843,val:12,c:'#34d399'},
-      {l:'Logistics',base:1855,val:26,c:'#34d399'},
-      {l:'IRS',base:1881,val:9,c:'#34d399'},
-      {l:'Hedged',base:0,val:1890,c:'#3b82f6'},
-    ];
+  {l:'Baseline',base:0,val:2146,c:'#000000'},
+  {l:'Ore Shock',base:2146,val:-180,c:'#4B5563'},
+  {l:'Coal FX',base:1966,val:-60,c:'#6B7280'},
+  {l:'Freight',base:1906,val:-41,c:'#9CA3AF'},
+  {l:'Yield Curve',base:1865,val:-18,c:'#D1D5DB'},
+  {l:'Unhedged',base:0,val:1756,c:'#2E2E38'},
+  {l:'Ore Rec.',base:1756,val:87,c:'#FFE600'},
+  {l:'NMDC',base:1843,val:12,c:'#FACC15'},
+  {l:'Logistics',base:1855,val:26,c:'#FFE600'},
+  {l:'IRS',base:1881,val:9,c:'#FDE047'},
+  {l:'Hedged',base:0,val:1890,c:'#FFE600'},
+];
     charts.wf=new Chart(el,{type:'bar',data:{labels:steps.map(s=>s.l),
       datasets:[
         {data:steps.map(s=>s.base),backgroundColor:'rgba(0,0,0,0)',borderColor:'rgba(0,0,0,0)'},
@@ -566,8 +664,8 @@ function initCharts(){
     const hM=SCENS.map(s=>+(calc(s.oP,s.fx,s.fM,s.sf,0.55).hM*100).toFixed(2));
     charts.scn=new Chart(el,{type:'bar',data:{labels:SCENS.map(s=>s.n),
       datasets:[
-        {label:'Unhedged Margin %',data:uM,backgroundColor:'#fda4af',borderRadius:4,barPercentage:0.55},
-        {label:'Hedged Margin %',data:hM,backgroundColor:'#6ee7b7',borderRadius:4,barPercentage:0.55},
+        {label:'Unhedged Margin %',data:uM,backgroundColor:'#2E2E38',borderRadius:4,barPercentage:0.55},
+        {label:'Hedged Margin %',data:hM,backgroundColor:'#FFE600',borderRadius:4,barPercentage:0.55},
       ]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11,weight:'500'},color:fontColor}}},
         scales:{x:{grid:{display:false},ticks:{color:fontColor,font:{size:10,weight:'600'}}},
@@ -585,14 +683,21 @@ function initCharts(){
     if(el1){
       charts.hdg=new Chart(el1,{type:'doughnut',
         data:{labels:['Ore Caps (55%)','Coal Options (50%)','FX Forwards (75%)','IRS Structures (60%)','Freight Floors (60%)','Residual'],
-          datasets:[{data:[55,50,75,60,60,40],backgroundColor:['#fbbf24','#f97316','#3b82f6','#a855f7','#10b981','#cbd5e1'],borderWidth:0}]},
+          datasets:[{data:[55,50,75,60,60,40],backgroundColor:[
+  '#FFE600',
+  '#FACC15',
+  '#D1D5DB',
+  '#9CA3AF',
+  '#4B5563',
+  '#000000'
+],borderWidth:0}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:fontColor,boxWidth:12,font:{size:11,weight:'500'}}}}}});
     }
     const el2=document.getElementById('hdgCostChart');
     if(el2){
       charts.hdgCost=new Chart(el2,{type:'bar',
         data:{labels:['Option Premiums','Collar Inflows','Cap Outlays','IRS Cost','Net P&L','Capital Protected'],
-          datasets:[{data:[-32,35,-6,8,5,133],backgroundColor:v=>v.raw<0?'#f87171':'#34d399',borderRadius:4,barPercentage:0.5}]},
+          datasets:[{data:[-32,35,-6,8,5,133],backgroundColor:v=>v.raw<0?'#2E2E38':'#FFE600',borderRadius:4,barPercentage:0.5}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
           scales:{x:{grid:{display:false},ticks:{color:fontColor,font:{size:10,weight:'500'}}},
             y:{grid:{color:gridColor},ticks:{color:fontColor}}}}});
@@ -604,7 +709,7 @@ function initCharts(){
     if(elFX){
       charts.fx=new Chart(elFX,{type:'bar',
         data:{labels:['USD Export Rev','USD Import Cost','Net USD Long','EUR Exports'],
-          datasets:[{data:[620,480,140,122],backgroundColor:['#34d399','#f87171','#60a5fa','#c084fc'],borderRadius:4,barPercentage:0.45}]},
+          datasets:[{data:[620,480,140,122],backgroundColor:['#FFE600','#2E2E38','#9CA3AF','#D1D5DB'],borderRadius:4,barPercentage:0.45}]},
         options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
           scales:{x:{grid:{color:gridColor},ticks:{color:fontColor}},y:{grid:{display:false},ticks:{color:fontColor,font:{size:11,weight:'500'}}}}}});
     }
@@ -615,8 +720,8 @@ function initCharts(){
       const postIRS=sofrR.map(s=>+((B.loan*B.irsPct*B.irsR + B.loan*(1-B.irsPct)*(s/100+B.sprd/10000))*B.fx/10).toFixed(1));
       charts.sofr=new Chart(elS,{type:'line',
         data:{labels:sofrR.map(v=>v+'%'),datasets:[
-          {label:'Floating Baseline',data:allFloat,borderColor:'#ef4444',borderWidth:2.5,tension:0.2},
-          {label:'Post-IRS (60% Locked)',data:postIRS,borderColor:'#10b981',borderWidth:2.5,borderDash:[5,5],tension:0.2},
+          {label:'Floating Baseline',data:allFloat,borderColor:'#2E2E38',borderWidth:2.5,tension:0.2},
+          {label:'Post-IRS (60% Locked)',data:postIRS,borderColor:'#FFE600',borderWidth:2.5,borderDash:[5,5],tension:0.2},
         ]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:fontColor,font:{size:11,weight:'500'}}}},
           scales:{x:{grid:{color:gridColor},ticks:{color:fontColor}},y:{grid:{color:gridColor},ticks:{color:fontColor}}}}});
@@ -637,8 +742,8 @@ function buildHeatmap(){
       const r=calc(op,fx,1.0,0.043,0.55);
       const m=r.uM*100;
       const isBase=(op===120&&fx===83.25);
-      const bg=m<9.5?'#fecaca':m<12?'#fef08a':'#bbf7d0';
-      const tc=m<9.5?'#991b1b':m<12?'#854d0e':'#166534';
+      const bg=m<9.5?'#2E2E38':m<12?'#9CA3AF':'#FFE600';
+      const tc=m<9.5?'#FFFFFF':'#000000';
       h+=`<div class="flex-1 heat-cell p-1.5 m-[1px] text-center rounded font-semibold text-[10px]" style="background:${bg}; color:${tc}; ${isBase?'ring-2 ring-slate-900 ring-offset-1 font-bold':''}">${m.toFixed(1)}%</div>`;
     });
     h+=`</div>`;
@@ -659,8 +764,8 @@ function buildHeatmap2(){
     hrs.forEach(hr=>{
       const gain=Math.max(0,oP-B.oreStr)*(hr/100)*B.oreVol*B.fx/10;
       const isBase=(shock===15&&hr===55);
-      const bg=gain<10?'#eff6ff':gain<50?'#dbeafe':'#d1fae5';
-      const tc=gain<10?'#1e40af':gain<50?'#1e40af':'#065f46';
+      const bg=gain<10?'#E5E7EB':gain<50?'#9CA3AF':'#FFE600';
+      const tc='#000000';
       h+=`<div class="flex-1 heat-cell p-1.5 m-[1px] text-center rounded font-semibold text-[10px]" style="background:${bg}; color:${tc}; ${isBase?'ring-2 ring-slate-900 ring-offset-1 font-bold':''}">${gain.toFixed(0)}</div>`;
     });
     h+=`</div>`;
