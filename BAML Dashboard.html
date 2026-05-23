@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAML CFO Risk Impact Dashboard</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    :root {
+      --font-sans: 'Inter', sans-serif;
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --ey-yellow: #FFE600;
+      --ey-dark: #2E2E38;
+    }
+    body { font-family: var(--font-sans); background: #f4f6f9; color: #1e293b; }
+    .display-title { font-family: var(--font-display); }
+    
+    /* Premium Glassmorphism */
+    .premium-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.08), 0 2px 8px -1px rgba(148, 163, 184, 0.04);
+      border-radius: 16px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .premium-card:hover { box-shadow: 0 12px 24px -4px rgba(148, 163, 184, 0.12), 0 4px 12px -2px rgba(148, 163, 184, 0.06); }
+    
+    /* Sliders */
+    input[type=range] { -webkit-appearance: none; width: 100%; background: #e2e8f0; height: 6px; border-radius: 999px; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: var(--ey-dark); border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); background: #000; }
+    
+    /* Heatmap */
+    .heat-cell { transition: all 0.15s ease; cursor: default; }
+    .heat-cell:hover { transform: scale(1.08); z-index: 10; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    
+    /* Nav */
+    .nav-btn { position: relative; transition: all 0.2s ease; }
+    .nav-btn::after { content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 3px; background: var(--ey-dark); transition: all 0.2s ease; transform: translateX(-50%); border-radius: 3px 3px 0 0; }
+    .nav-btn.active { color: #000; font-weight: 600; }
+    .nav-btn.active::after { width: 60%; }
+
+    /* Custom Leaflet Map Styling */
+    .map-node { background: var(--ey-yellow); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(255, 230, 0, 0.5); }
+    .map-node-hq { background: var(--ey-dark); border: 2px solid var(--ey-yellow); border-radius: 50%; box-shadow: 0 0 12px rgba(0, 0, 0, 0.5); }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-7xl mx-auto space-y-6">
+  
+  <header class="bg-[#2E2E38] text-white rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative overflow-hidden">
+    <div class="absolute right-0 top-0 opacity-10 pointer-events-none translate-x-12 -translate-y-6">
+      <i class="ti ti-chart-arcs text-[240px]"></i>
+    </div>
+    
+    <div class="flex items-center gap-4 z-10">
+      <div class="bg-[#FFE600] text-[#2E2E38] font-extrabold text-sm px-4 py-2 rounded-xl tracking-wider shadow-md display-title">EY</div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight display-title">BAML CFO Impact Dashboard</h1>
+        <p class="text-xs md:text-sm text-slate-300 font-medium mt-0.5">Live Scenario Stress Testing & Hedge Portfolio Metrics</p>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full lg:w-auto z-10">
+      <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 min-w-[120px]">
+        <div class="text-[10px] uppercase tracking-wider text-slate-300 font-semibold">Revenue</div>
+        <div class="text-base font-bold text-[#FFE600] mt-0.5" id="hdr-rev">₹18,500 Cr</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 min-w-[120px]">
+        <div class="text-[10px] uppercase tracking-wider text-slate-300 font-semibold">EBITDA Base</div>
+        <div class="text-base font-bold text-white mt-0.5" id="hdr-ebitda">11.6%</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 min-w-[120px]">
+        <div class="text-[10px] uppercase tracking-wider text-slate-300 font-semibold">Covenant Floor</div>
+        <div class="text-base font-bold text-rose-400 mt-0.5" id="hdr-floor">9.5%</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 min-w-[120px]">
+        <div class="text-[10px] uppercase tracking-wider text-slate-300 font-semibold">Ore Hedge</div>
+        <div class="text-base font-bold text-emerald-400 mt-0.5" id="hdr-hedge">55%</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white p-2 rounded-xl shadow-sm border border-slate-200/60 flex gap-1 overflow-x-auto scrollbar-none">
+    <button class="nav-btn active px-4 py-2.5 text-xs md:text-sm font-medium text-slate-500 hover:text-slate-800 rounded-lg flex items-center gap-2" onclick="showTab('overview',this)">
+      <i class="ti ti-layout-dashboard text-base text-slate-400"></i> Overview & Supply Map
+    </button>
+    <button class="nav-btn px-4 py-2.5 text-xs md:text-sm font-medium text-slate-500 hover:text-slate-800 rounded-lg flex items-center gap-2" onclick="showTab('scenarios',this)">
+      <i class="ti ti-chart-bar text-base text-slate-400"></i> Macro Scenarios
+    </button>
+    <button class="nav-btn px-4 py-2.5 text-xs md:text-sm font-medium text-slate-500 hover:text-slate-800 rounded-lg flex items-center gap-2" onclick="showTab('sensitivity',this)">
+      <i class="ti ti-adjustments-horizontal text-base text-slate-400"></i> Live Stress Engine
+    </button>
+    <button class="nav-btn px-4 py-2.5 text-xs md:text-sm font-medium text-slate-500 hover:text-slate-800 rounded-lg flex items-center gap-2" onclick="showTab('hedge',this)">
+      <i class="ti ti-shield-check text-base text-slate-400"></i> Hedge Portfolio
+    </button>
+    <button class="nav-btn px-4 py-2.5 text-xs md:text-sm font-medium text-slate-500 hover:text-slate-800 rounded-lg flex items-center gap-2" onclick="showTab('fx',this)">
+      <i class="ti ti-currency-dollar text-base text-slate-400"></i> FX & Yield
+    </button>
+    <button class="nav-btn px-4 py-2.5 text-xs md:text-sm font-medium text-slate-500 hover:text-slate-800 rounded-lg flex items-center gap-2" onclick="showTab('kpis',this)">
+      <i class="ti ti-target text-base text-slate-400"></i> KPIs
+    </button>
+  </nav>
+
+  <main id="tab-content" class="space-y-6 opacity-100 transition-opacity duration-200"></main>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// Mathematical Baseline
+const B = {
+  rev:18500,ebitdaM:0.116,ebitda:18500*0.116,
+  oreVol:1.2,oreP:120,coalVol:0.6,coalP:210,
+  fx:83.25,usdImp:480,usdExp:620,netUsd:140,
+  loan:150,sofr:0.043,sprd:220,irsR:0.064,irsPct:0.60,
+  oreHR:0.55,oreStr:123,coalHR:0.50,
+  nmdc:0.175,frtPct:0.09,frtAbs:0.60,sofrCap:0.055,
+  optPrem:32,fxInc:35,covFloor:0.095
+};
+B.oreSpd=B.oreVol*B.oreP;B.coalSpd=B.coalVol*B.coalP;
+B.rmUsd=B.oreSpd+B.coalSpd;B.frtUsd=B.rmUsd*B.frtPct;
+B.intUsd=B.loan*(B.sofr+B.sprd/10000);B.intInr=B.intUsd*B.fx/10;
+B.covFlrInr=B.rev*B.covFloor;
+
+function calc(oP,fx,fM,sf,hR){
+  const eR=sf+B.sprd/10000;
+  const oreShk=(B.oreVol*oP*fx-B.oreSpd*B.fx)/10;
+  const coalShk=B.coalSpd*(fx-B.fx)/10;
+  const frtShk=B.frtUsd*(fM*fx-B.fx)/10;
+  const intShk=(B.loan*eR*fx-B.intUsd*B.fx)/10;
+  const tot=oreShk+coalShk+frtShk+intShk;
+  const uE=B.ebitda-tot;
+  const oreG=Math.max(0,oP-B.oreStr)*hR*B.oreVol*fx/10;
+  const nmdcR=B.nmdc*B.oreVol*B.oreP*(fx-B.fx)/10;
+  const frtR=B.frtAbs*B.frtUsd*(fM-1)*fx/10;
+  const irsR=B.irsPct*B.loan*Math.max(0,eR-B.irsR)*fx/10;
+  const totR=oreG+nmdcR+frtR+irsR;
+  const hE=uE+totR;
+  return{oreShk,coalShk,frtShk,intShk,tot,
+    oreG,nmdcR,frtR,irsR,totR,
+    uE,hE,uM:uE/B.rev,hM:hE/B.rev,
+    uHd:uE-B.covFlrInr,hHd:hE-B.covFlrInr};
+}
+
+const SCENS=[
+  {n:'Baseline Model',oP:120,fx:83.25,fM:1.0,sf:0.043},
+  {n:'Iron Ore Spike (+15%)',oP:138,fx:83.25,fM:1.0,sf:0.043},
+  {n:'Severe INR Stress (→88)',oP:120,fx:88,fM:1.0,sf:0.043},
+  {n:'Global Freight Shock (+20%)',oP:120,fx:83.25,fM:1.2,sf:0.043},
+  {n:'Combined Tail Risk Event',oP:138,fx:88,fM:1.2,sf:0.053}
+];
+
+let activeTab='overview';
+let charts={};
+let mapInstance = null;
+let sliders={ore:120,fx:83.25,frt:1.0,sofr:4.3,hr:55};
+
+function n2(v){return isNaN(v)?'—':(v<0?'('+Math.abs(v).toFixed(1)+')':v.toFixed(1))}
+function pct(v){return(v*100).toFixed(2)+'%'}
+
+function destroyCharts(){
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});
+  charts={};
+  if(mapInstance) { mapInstance.remove(); mapInstance = null; }
+}
+
+function showTab(t,btn){
+  const el=document.getElementById('tab-content');
+  el.style.opacity = 0;
+  setTimeout(() => {
+    destroyCharts();
+    activeTab=t;
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    renderTab();
+    el.style.opacity = 1;
+  }, 150);
+}
+
+function renderTab(){
+  const el=document.getElementById('tab-content');
+  if(activeTab==='overview') el.innerHTML=buildOverview();
+  else if(activeTab==='scenarios') el.innerHTML=buildScenarios();
+  else if(activeTab==='sensitivity') el.innerHTML=buildSensitivity();
+  else if(activeTab==='hedge') el.innerHTML=buildHedge();
+  else if(activeTab==='fx') el.innerHTML=buildFX();
+  else if(activeTab==='kpis') el.innerHTML=buildKPIs();
+  
+  setTimeout(() => {
+    initCharts();
+    if(activeTab === 'overview') { initMap(); }
+  }, 50);
+}
+
+function buildOverview(){
+  const comb=calc(138,88,1.2,0.053,0.55);
+  return `
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="premium-card p-5 lg:col-span-2">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex justify-between">
+        <span>Global Supply Chain Network</span>
+        <span class="text-blue-500">Live Infrastructure Mapping</span>
+      </div>
+      <div id="map" class="w-full h-[320px] rounded-xl border border-slate-200 z-0"></div>
+    </div>
+    
+    <div class="premium-card p-5">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Risk Exposure (INR Cr)</div>
+      <div class="space-y-4">${buildRiskBars()}</div>
+    </div>
+  </div>
+
+  <div class="premium-card p-5">
+    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">EBITDA Waterfall Architecture &bull; Combined Stress Vectors</div>
+    <div class="relative h-[280px]"><canvas id="wfChart"></canvas></div>
+  </div>`;
+}
+
+function buildRiskBars(){
+  const items=[
+    {l:'Iron Ore Price Shock',v:179.8,max:250,c:'linear-gradient(90deg, #f87171, #ef4444)'},
+    {l:'Coal FX Delta Deviation',v:59.9,max:250,c:'linear-gradient(90deg, #fbbf24, #f59e0b)'},
+    {l:'Global Freight Premium (+20%)',v:40.5,max:250,c:'linear-gradient(90deg, #fbbf24, #f59e0b)'},
+    {l:'Yield Curve Adjustment (+1%)',v:12.5,max:250,c:'linear-gradient(90deg, #60a5fa, #3b82f6)'},
+    {l:'Ore Mitigation Capture',v:82.4,max:250,c:'linear-gradient(90deg, #34d399, #10b981)'},
+    {l:'NMDC Index Arbitrage',v:12.0,max:250,c:'linear-gradient(90deg, #34d399, #10b981)'},
+  ];
+  return items.map(i=>`
+    <div class="space-y-1">
+      <div class="flex justify-between text-xs font-medium"><span class="text-slate-600 text-[11px]">${i.l}</span><span class="text-slate-800 font-bold">₹${i.v.toFixed(1)} Cr</span></div>
+      <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-500" style="width:${Math.min(100,i.v/i.max*100)}%; background:${i.c}"></div></div>
+    </div>`).join('');
+}
+
+function buildScenarios(){
+  const rows=SCENS.map(s=>{
+    const r=calc(s.oP,s.fx,s.fM,s.sf,0.55);
+    const uBad = r.uM < 0.095;
+    const hBad = r.hM < 0.095;
+    return `<tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors text-xs">
+      <td class="p-3.5 text-left font-semibold text-slate-800">${s.n}</td>
+      <td class="p-3.5 font-medium text-slate-600">${s.oP===120?'&mdash;':'$'+s.oP}</td>
+      <td class="p-3.5 font-medium text-slate-600">${s.fx===83.25?'&mdash;':'₹'+s.fx}</td>
+      <td class="p-3.5 font-medium text-slate-600">${s.fM===1?'&mdash;':'+20%'}</td>
+      <td class="p-3.5 font-medium text-slate-600">${s.sf===0.043?'&mdash;':'+100bps'}</td>
+      <td class="p-3.5 font-bold ${uBad?'text-rose-500 bg-rose-50/40':'text-amber-600'}">${pct(r.uM)}</td>
+      <td class="p-3.5 font-bold ${hBad?'text-rose-500':'text-emerald-600 bg-emerald-50/40'}">${pct(r.hM)}</td>
+      <td class="p-3.5 font-bold text-slate-700">₹${n2(r.totR)} Cr</td>
+      <td class="p-3.5 font-bold ${r.uHd<0?'text-rose-600':'text-slate-500'}">${r.uHd<0?'BREACH':'+₹'+n2(r.uHd)}</td>
+      <td class="p-3.5 font-bold ${r.hHd<0?'text-rose-600':'text-emerald-600'}">${r.hHd<0?'BREACH':'+₹'+n2(r.hHd)}</td>
+    </tr>`;
+  }).join('');
+  return`
+  <div class="premium-card p-5 mb-6">
+    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">EBITDA Resilience Mapping &bull; Delta vs Covenant Floor (9.5%)</div>
+    <div class="relative h-[240px]"><canvas id="scnChart"></canvas></div>
+  </div>
+  <div class="premium-card overflow-hidden">
+    <div class="p-5 border-b border-slate-100 bg-slate-50/40">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Scenario Stress Matrix Evaluation Table</div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-right border-collapse">
+        <thead>
+          <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200">
+            <th class="p-3 text-left">Stress Vector</th><th class="p-3">Ore Index</th><th class="p-3">USD/INR</th><th class="p-3">Freight</th><th class="p-3">SOFR</th>
+            <th class="p-3">Unhedged %</th><th class="p-3">Hedged %</th><th class="p-3">Mitigations</th><th class="p-3">Unhd. Space</th><th class="p-3">Hedged Space</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function buildSensitivity(){
+  return`
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch mb-6">
+    <div class="premium-card p-5 lg:col-span-1 flex flex-col justify-between space-y-4">
+      <div>
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Live Multi-Variable Stress Engine</div>
+        <div class="space-y-4">
+          <div class="space-y-1.5"><div class="flex justify-between text-xs font-semibold text-slate-600"><span>Iron Ore (USD/t)</span><span class="text-slate-900 font-bold" id="sv-ore">$${sliders.ore}</span></div><input type="range" min="90" max="150" step="5" value="${sliders.ore}" id="sl-ore" oninput="updateSlider('ore',+this.value)"></div>
+          <div class="space-y-1.5"><div class="flex justify-between text-xs font-semibold text-slate-600"><span>USD/INR Spot</span><span class="text-slate-900 font-bold" id="sv-fx">₹${sliders.fx.toFixed(2)}</span></div><input type="range" min="78" max="92" step="0.5" value="${sliders.fx}" id="sl-fx" oninput="updateSlider('fx',+this.value)"></div>
+          <div class="space-y-1.5"><div class="flex justify-between text-xs font-semibold text-slate-600"><span>Freight Multiplier</span><span class="text-slate-900 font-bold" id="sv-frt">${sliders.frt.toFixed(2)}×</span></div><input type="range" min="1.0" max="1.5" step="0.05" value="${sliders.frt}" id="sl-frt" oninput="updateSlider('frt',+this.value)"></div>
+          <div class="space-y-1.5"><div class="flex justify-between text-xs font-semibold text-slate-600"><span>SOFR Benchmark</span><span class="text-slate-900 font-bold" id="sv-sofr">${sliders.sofr.toFixed(2)}%</span></div><input type="range" min="3.0" max="7.0" step="0.25" value="${sliders.sofr}" id="sl-sofr" oninput="updateSlider('sofr',+this.value)"></div>
+          <div class="space-y-1.5"><div class="flex justify-between text-xs font-semibold text-slate-600"><span>Hedge Ratio</span><span class="text-slate-900 font-bold" id="sv-hr">${sliders.hr}%</span></div><input type="range" min="30" max="70" step="5" value="${sliders.hr}" id="sl-hr" oninput="updateSlider('hr',+this.value)"></div>
+        </div>
+      </div>
+    </div>
+    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4" id="live-cards"></div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="premium-card p-5">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Unhedged EBITDA Heatmap &bull; (Ore &times; FX)</div>
+      <div id="heatmap" class="overflow-x-auto pt-2"></div>
+    </div>
+    <div class="premium-card p-5">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Option Recovery Heatmap &bull; (Shock &times; Ratio)</div>
+      <div id="heatmap2" class="overflow-x-auto pt-2"></div>
+    </div>
+  </div>`;
+}
+
+function buildHedge(){
+  return`
+  <div class="premium-card overflow-hidden mb-6">
+    <div class="p-5 border-b border-slate-100 bg-slate-50/40">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Hedge Instrument Deployment Matrix</div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200">
+            <th class="p-4">Instrument / Strategy</th>
+            <th class="p-4">Asset Class</th>
+            <th class="p-4 text-center">Current Cover</th>
+            <th class="p-4 text-center">Target Band</th>
+            <th class="p-4 text-right">Execution Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-sm font-medium">
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-slate-800">Asian Call Options</td><td class="p-4 text-slate-500">Iron Ore Fines</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-bold">55%</span></td>
+            <td class="p-4 text-slate-500 text-center">50-70%</td><td class="p-4 text-right text-emerald-600 font-semibold">Active (GIFT City)</td>
+          </tr>
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-slate-800">Zero-Cost Collar</td><td class="p-4 text-slate-500">Coking Coal</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-bold">50%</span></td>
+            <td class="p-4 text-slate-500 text-center">45-60%</td><td class="p-4 text-right text-emerald-600 font-semibold">Active</td>
+          </tr>
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-slate-800">NMDC Domestic Shift</td><td class="p-4 text-slate-500">Structural FX Offset</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-bold">20%</span></td>
+            <td class="p-4 text-slate-500 text-center">15-20%</td><td class="p-4 text-right text-blue-600 font-semibold">Embedded Policy</td>
+          </tr>
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-slate-800">FX Forward Sales</td><td class="p-4 text-slate-500">USD Export Revenue</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-rose-100 text-rose-700 rounded-md text-xs font-bold">0%</span></td>
+            <td class="p-4 text-slate-500 text-center">75% (M1-3)</td><td class="p-4 text-right text-amber-600 font-semibold">Pending ISDA Clearance</td>
+          </tr>
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-slate-800">Interest Rate Swap</td><td class="p-4 text-slate-500">$150M Term Loan</td>
+            <td class="p-4 text-center"><span class="px-2 py-1 bg-rose-100 text-rose-700 rounded-md text-xs font-bold">0%</span></td>
+            <td class="p-4 text-slate-500 text-center">60% ($90M)</td><td class="p-4 text-right text-amber-600 font-semibold">Scheduled Month 3</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="premium-card p-5">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Risk Allocation Hedge Cover Breakdown</div>
+      <div class="relative h-[240px]"><canvas id="hdgChart"></canvas></div>
+    </div>
+    <div class="premium-card p-5">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Programme Cost vs Protection Captured (INR Cr)</div>
+      <div class="relative h-[240px]"><canvas id="hdgCostChart"></canvas></div>
+    </div>
+  </div>`;
+}
+
+function buildFX(){
+  return`
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="premium-card p-5">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">USD Volume Concentration (Annual Flows)</div>
+      <div class="relative h-[250px]"><canvas id="fxChart"></canvas></div>
+    </div>
+    <div class="premium-card p-5 flex flex-col justify-between">
+        <div>
+          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Net Currency Position Analysis</div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span class="text-sm font-semibold text-slate-600">Gross Export Inflows</span>
+                <span class="text-base font-bold text-emerald-600">$620M</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span class="text-sm font-semibold text-slate-600">Gross Import Cost</span>
+                <span class="text-base font-bold text-rose-500">$480M</span>
+            </div>
+            <div class="flex justify-between items-center p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <span class="text-sm font-bold text-blue-800">Net Natural Hedge Long</span>
+                <span class="text-lg font-black text-blue-700">+$140M</span>
+            </div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500 font-medium pt-3 mt-4">
+          <i class="ti ti-info-circle text-emerald-600"></i> INR depreciation is Net Positive at consolidated level. Commodity desk must reduce hedge ratios organically when USD/INR weakens.
+        </div>
+    </div>
+  </div>
+  
+  <div class="premium-card p-5">
+    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">SOFR Benchmark Yield Volatility vs Consolidated Interest Outlays (INR Cr)</div>
+    <div class="relative h-[220px]"><canvas id="sofrChart"></canvas></div>
+  </div>`;
+}
+
+function buildKPIs(){
+  const kpis=[
+    {t:'Board', n:'Hedged EBITDA vs Floor', v:'10.21%', tgt:'>10.5%', flr:'9.5%', s:'warn'},
+    {t:'Board', n:'DSCR Coverage', v:'8.7×', tgt:'>2.0×', flr:'1.25×', s:'green'},
+    {t:'CFRC', n:'Net Unhedged Exposure / EBITDA', v:'Over Limit', tgt:'<25%', flr:'35%', s:'red'},
+    {t:'Desk', n:'Iron Ore Cover Ratio', v:'55%', tgt:'50-70%', flr:'30%', s:'green'},
+    {t:'Desk', n:'Inventory Cycle Days', v:'71', tgt:'<52', flr:'71', s:'red'}
+  ];
+  
+  const kpiHTML=kpis.map(k=>{
+    let bc = "bg-amber-100 text-amber-700";
+    if(k.s === 'green') bc = "bg-emerald-100 text-emerald-700";
+    if(k.s === 'red') bc = "bg-rose-100 text-rose-700";
+    
+    return`<div class="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition">
+      <div>
+        <div class="text-sm font-bold text-slate-800">${k.n}</div>
+        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">${k.t} Level Metric &bull; Floor: ${k.flr}</div>
+      </div>
+      <div class="text-right">
+        <span class="px-3 py-1 rounded-md text-xs font-bold ${bc}">${k.v}</span>
+        <div class="text-[10px] text-slate-400 font-bold mt-1 uppercase">Target: ${k.tgt}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return`
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="premium-card p-0 overflow-hidden flex flex-col">
+      <div class="p-5 border-b border-slate-100 bg-slate-50/40 text-xs font-bold text-slate-400 uppercase tracking-wider">Executive KPI Matrix</div>
+      <div class="flex-1 p-2">${kpiHTML}</div>
+    </div>
+    
+    <div class="premium-card p-5">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Critical Execution Timeline</div>
+      <div class="space-y-6 ml-2">
+        
+        <div class="relative pl-6">
+            <div class="absolute left-0 top-1 w-3 h-3 bg-emerald-500 rounded-full ring-4 ring-emerald-100"></div>
+            <div class="absolute left-1.5 top-4 w-px h-full bg-slate-200"></div>
+            <div class="text-sm font-bold text-slate-800">Board Policy Approval</div>
+            <div class="text-xs text-slate-500 font-medium">Single Unified Commodity + FX Document (Month 1)</div>
+        </div>
+        
+        <div class="relative pl-6">
+            <div class="absolute left-0 top-1 w-3 h-3 bg-rose-500 rounded-full ring-4 ring-rose-100"></div>
+            <div class="absolute left-1.5 top-4 w-px h-full bg-slate-200"></div>
+            <div class="text-sm font-bold text-slate-800">ISDA Execution (HDFC / StanChart)</div>
+            <div class="text-xs text-slate-500 font-medium text-rose-600 font-semibold">Blocking Prerequisite for FX/IRS trades (Month 1-2)</div>
+        </div>
+        
+        <div class="relative pl-6">
+            <div class="absolute left-0 top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-blue-100"></div>
+            <div class="absolute left-1.5 top-4 w-px h-full bg-slate-200"></div>
+            <div class="text-sm font-bold text-slate-800">Nigeria B2B LC Architecture</div>
+            <div class="text-xs text-slate-500 font-medium">Resolve trapped capital constraints (Month 2)</div>
+        </div>
+        
+        <div class="relative pl-6">
+            <div class="absolute left-0 top-1 w-3 h-3 bg-slate-300 rounded-full ring-4 ring-slate-100"></div>
+            <div class="text-sm font-bold text-slate-400">IRS Swap Deployment</div>
+            <div class="text-xs text-slate-400 font-medium">60% Notional lock pending ISDA (Month 3)</div>
+        </div>
+        
+      </div>
+    </div>
+  </div>`;
+}
+
+// Map Initialization
+function initMap() {
+  const mapEl = document.getElementById('map');
+  if(!mapEl) return;
+  
+  // Cleanup if exists
+  if(mapInstance) {
+    mapInstance.off();
+    mapInstance.remove();
+  }
+  
+  // Create Map instance
+  mapInstance = L.map('map', {zoomControl: false, attributionControl: false}).setView([5, 45], 2);
+  
+  // Premium Dark Tile Layer (CartoDB Dark Matter)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 19
+  }).addTo(mapInstance);
+
+  // Custom Icon Definitions
+  const iconNode = L.divIcon({ className: 'map-node', iconSize: [12, 12] });
+  const iconHQ = L.divIcon({ className: 'map-node-hq', iconSize: [16, 16] });
+
+  // Supply Chain Nodes
+  const nodes = {
+      india: { coords: [21.0, 78.0], name: "India HQ", desc: "Primary Hub", icon: iconHQ },
+      brazil: { coords: [-10.0, -52.0], name: "Brazil", desc: "40% Ore (Vale)", icon: iconNode },
+      aus: { coords: [-22.0, 148.0], name: "Australia", desc: "50% Coal (BMA)", icon: iconNode },
+      sa: { coords: [-29.0, 24.0], name: "South Africa", desc: "Alloys", icon: iconNode },
+      nigeria: { coords: [9.0, 8.0], name: "Nigeria", desc: "Distribution", icon: iconNode },
+      vietnam: { coords: [14.0, 108.0], name: "Vietnam", desc: "Fabrication", icon: iconNode }
+  };
+
+  // Plot Markers
+  Object.values(nodes).forEach(n => {
+      L.marker(n.coords, {icon: n.icon})
+       .bindTooltip(`<b>${n.name}</b><br><span style="font-size:10px;color:#94a3b8;">${n.desc}</span>`, {direction:'top', offset:[0,-10], className: 'bg-[#1e293b] text-white border-0'})
+       .addTo(mapInstance);
+  });
+
+  // Plot Curved / Dashed Lines to HQ
+  const lineOptions = { color: '#FFE600', weight: 1.5, dashArray: '4, 4', opacity: 0.6 };
+  ['brazil', 'aus', 'sa'].forEach(key => {
+      L.polyline([nodes[key].coords, nodes.india.coords], lineOptions).addTo(mapInstance);
+  });
+  
+  // Force resize calculation after render to prevent gray box glitch
+  setTimeout(() => mapInstance.invalidateSize(), 100);
+}
+
+function initCharts(){
+  const fontColor = '#64748b';
+  const gridColor = '#f1f5f9';
+
+  if(activeTab==='overview'){
+    const el=document.getElementById('wfChart');if(!el)return;
+    const steps=[
+      {l:'Baseline',base:0,val:2146,c:'#2e2e38'},
+      {l:'Ore Shock',base:2146,val:-180,c:'#f87171'},
+      {l:'Coal FX',base:1966,val:-60,c:'#f87171'},
+      {l:'Freight',base:1906,val:-41,c:'#f87171'},
+      {l:'Yield Curve',base:1865,val:-18,c:'#f87171'},
+      {l:'Unhedged',base:0,val:1756,c:'#f59e0b'},
+      {l:'Ore Rec.',base:1756,val:87,c:'#34d399'},
+      {l:'NMDC',base:1843,val:12,c:'#34d399'},
+      {l:'Logistics',base:1855,val:26,c:'#34d399'},
+      {l:'IRS',base:1881,val:9,c:'#34d399'},
+      {l:'Hedged',base:0,val:1890,c:'#3b82f6'},
+    ];
+    charts.wf=new Chart(el,{type:'bar',data:{labels:steps.map(s=>s.l),
+      datasets:[
+        {data:steps.map(s=>s.base),backgroundColor:'rgba(0,0,0,0)',borderColor:'rgba(0,0,0,0)'},
+        {data:steps.map(s=>Math.abs(s.val)),backgroundColor:steps.map(s=>s.c),borderRadius:4,barPercentage:0.65}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{stacked:true,grid:{display:false},ticks:{color:fontColor,font:{size:10,weight:'500'}}},
+          y:{stacked:true,grid:{color:gridColor},ticks:{color:fontColor,font:{size:10}}}}}});
+  }
+
+  if(activeTab==='scenarios'){
+    const el=document.getElementById('scnChart');if(!el)return;
+    const uM=SCENS.map(s=>+(calc(s.oP,s.fx,s.fM,s.sf,0.55).uM*100).toFixed(2));
+    const hM=SCENS.map(s=>+(calc(s.oP,s.fx,s.fM,s.sf,0.55).hM*100).toFixed(2));
+    charts.scn=new Chart(el,{type:'bar',data:{labels:SCENS.map(s=>s.n),
+      datasets:[
+        {label:'Unhedged Margin %',data:uM,backgroundColor:'#fda4af',borderRadius:4,barPercentage:0.55},
+        {label:'Hedged Margin %',data:hM,backgroundColor:'#6ee7b7',borderRadius:4,barPercentage:0.55},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11,weight:'500'},color:fontColor}}},
+        scales:{x:{grid:{display:false},ticks:{color:fontColor,font:{size:10,weight:'600'}}},
+          y:{grid:{color:gridColor},ticks:{color:fontColor,callback:v=>v+'%'},min:8,max:13}}}});
+  }
+
+  if(activeTab==='sensitivity'){
+    buildHeatmap();
+    buildHeatmap2();
+    buildLiveCards();
+  }
+
+  if(activeTab==='hedge'){
+    const el1=document.getElementById('hdgChart');
+    if(el1){
+      charts.hdg=new Chart(el1,{type:'doughnut',
+        data:{labels:['Ore Caps (55%)','Coal Options (50%)','FX Forwards (75%)','IRS Structures (60%)','Freight Floors (60%)','Residual'],
+          datasets:[{data:[55,50,75,60,60,40],backgroundColor:['#fbbf24','#f97316','#3b82f6','#a855f7','#10b981','#cbd5e1'],borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:fontColor,boxWidth:12,font:{size:11,weight:'500'}}}}}});
+    }
+    const el2=document.getElementById('hdgCostChart');
+    if(el2){
+      charts.hdgCost=new Chart(el2,{type:'bar',
+        data:{labels:['Option Premiums','Collar Inflows','Cap Outlays','IRS Cost','Net P&L','Capital Protected'],
+          datasets:[{data:[-32,35,-6,8,5,133],backgroundColor:v=>v.raw<0?'#f87171':'#34d399',borderRadius:4,barPercentage:0.5}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+          scales:{x:{grid:{display:false},ticks:{color:fontColor,font:{size:10,weight:'500'}}},
+            y:{grid:{color:gridColor},ticks:{color:fontColor}}}}});
+    }
+  }
+
+  if(activeTab==='fx'){
+    const elFX=document.getElementById('fxChart');
+    if(elFX){
+      charts.fx=new Chart(elFX,{type:'bar',
+        data:{labels:['USD Export Rev','USD Import Cost','Net USD Long','EUR Exports'],
+          datasets:[{data:[620,480,140,122],backgroundColor:['#34d399','#f87171','#60a5fa','#c084fc'],borderRadius:4,barPercentage:0.45}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+          scales:{x:{grid:{color:gridColor},ticks:{color:fontColor}},y:{grid:{display:false},ticks:{color:fontColor,font:{size:11,weight:'500'}}}}}});
+    }
+    const elS=document.getElementById('sofrChart');
+    if(elS){
+      const sofrR=[3,3.5,4,4.3,5,5.5,6,6.5,7];
+      const allFloat=sofrR.map(s=>+(B.loan*(s/100+B.sprd/10000)*B.fx/10).toFixed(1));
+      const postIRS=sofrR.map(s=>+((B.loan*B.irsPct*B.irsR + B.loan*(1-B.irsPct)*(s/100+B.sprd/10000))*B.fx/10).toFixed(1));
+      charts.sofr=new Chart(elS,{type:'line',
+        data:{labels:sofrR.map(v=>v+'%'),datasets:[
+          {label:'Floating Baseline',data:allFloat,borderColor:'#ef4444',borderWidth:2.5,tension:0.2},
+          {label:'Post-IRS (60% Locked)',data:postIRS,borderColor:'#10b981',borderWidth:2.5,borderDash:[5,5],tension:0.2},
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:fontColor,font:{size:11,weight:'500'}}}},
+          scales:{x:{grid:{color:gridColor},ticks:{color:fontColor}},y:{grid:{color:gridColor},ticks:{color:fontColor}}}}});
+    }
+  }
+}
+
+function buildHeatmap(){
+  const el=document.getElementById('heatmap');if(!el)return;
+  const ores=[90,100,110,120,130,140,150];
+  const fxs=[78,80,82,84,86,88,90,92];
+  let h=`<div class="flex mb-1 min-w-[500px]" style="padding-left:60px">`;
+  fxs.forEach(f=>h+=`<div class="flex-1 text-[10px] font-bold text-slate-400 text-center">${f}</div>`);
+  h+=`</div>`;
+  ores.forEach(op=>{
+    h+=`<div class="flex items-center mb-1 min-w-[500px]"><div class="w-[60px] text-[10px] font-bold text-slate-400 text-right pr-3">$${op}</div>`;
+    fxs.forEach(fx=>{
+      const r=calc(op,fx,1.0,0.043,0.55);
+      const m=r.uM*100;
+      const isBase=(op===120&&fx===83.25);
+      const bg=m<9.5?'#fecaca':m<12?'#fef08a':'#bbf7d0';
+      const tc=m<9.5?'#991b1b':m<12?'#854d0e':'#166534';
+      h+=`<div class="flex-1 heat-cell p-1.5 m-[1px] text-center rounded font-semibold text-[10px]" style="background:${bg}; color:${tc}; ${isBase?'ring-2 ring-slate-900 ring-offset-1 font-bold':''}">${m.toFixed(1)}%</div>`;
+    });
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
+}
+
+function buildHeatmap2(){
+  const el=document.getElementById('heatmap2');if(!el)return;
+  const shocks=[0,5,10,15,20,25,30];
+  const hrs=[30,40,50,55,60,65,70];
+  let h=`<div class="flex mb-1 min-w-[500px]" style="padding-left:50px">`;
+  hrs.forEach(hr=>h+=`<div class="flex-1 text-[10px] font-bold text-slate-400 text-center">${hr}%</div>`);
+  h+=`</div>`;
+  shocks.forEach(shock=>{
+    const oP=120*(1+shock/100);
+    h+=`<div class="flex items-center mb-1 min-w-[500px]"><div class="w-[50px] text-[10px] font-bold text-slate-400 text-right pr-3">+${shock}%</div>`;
+    hrs.forEach(hr=>{
+      const gain=Math.max(0,oP-B.oreStr)*(hr/100)*B.oreVol*B.fx/10;
+      const isBase=(shock===15&&hr===55);
+      const bg=gain<10?'#eff6ff':gain<50?'#dbeafe':'#d1fae5';
+      const tc=gain<10?'#1e40af':gain<50?'#1e40af':'#065f46';
+      h+=`<div class="flex-1 heat-cell p-1.5 m-[1px] text-center rounded font-semibold text-[10px]" style="background:${bg}; color:${tc}; ${isBase?'ring-2 ring-slate-900 ring-offset-1 font-bold':''}">${gain.toFixed(0)}</div>`;
+    });
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
+}
+
+function buildLiveCards(){
+  const r=calc(sliders.ore,sliders.fx,sliders.frt,sliders.sofr/100,sliders.hr/100);
+  const el=document.getElementById('live-cards');if(!el)return;
+  
+  const uBreach = r.uHd < 0;
+  const hBreach = r.hHd < 0;
+
+  el.innerHTML=`
+  <div class="premium-card p-5 border-t-4 ${uBreach?'border-t-rose-500':'border-t-amber-500'} flex flex-col justify-between">
+    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unhedged Impact</div><div class="text-2xl font-bold mt-1 display-title ${uBreach?'text-rose-600':'text-slate-800'}">₹${r.uE.toFixed(1)} Cr</div></div>
+    <div class="text-xs font-semibold mt-2 ${uBreach?'text-rose-600 bg-rose-50 border border-rose-100 p-2 rounded-lg':'text-slate-500'}">${(r.uM*100).toFixed(2)}% Margin ${uBreach?'&bull; BREACH DEVIATION':''}</div>
+  </div>
+  <div class="premium-card p-5 border-t-4 ${hBreach?'border-t-rose-500':'border-t-emerald-500'} flex flex-col justify-between">
+    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hedged Result</div><div class="text-2xl font-bold mt-1 display-title ${hBreach?'text-rose-600':'text-emerald-700'}">₹${r.hE.toFixed(1)} Cr</div></div>
+    <div class="text-xs font-semibold mt-2 ${hBreach?'text-rose-600 bg-rose-50 border border-rose-100 p-2 rounded-lg':'text-emerald-700 bg-emerald-50 border border-emerald-100 p-2 rounded-lg'}">${(r.hM*100).toFixed(2)}% Margin</div>
+  </div>
+  <div class="premium-card p-5 border-t-4 border-t-rose-400 flex flex-col justify-between">
+    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gross Portfolio Shock</div><div class="text-2xl font-bold mt-1 display-title text-rose-600">&minus;₹${r.tot.toFixed(1)} Cr</div></div>
+    <div class="text-[10px] text-slate-500 font-medium mt-2 leading-relaxed">Ore: ₹${r.oreShk.toFixed(0)}Cr &bull; Coal: ₹${r.coalShk.toFixed(0)}Cr<br>Frt: ₹${r.frtShk.toFixed(0)}Cr &bull; Yld: ₹${r.intShk.toFixed(0)}Cr</div>
+  </div>
+  <div class="premium-card p-5 border-t-4 ${hBreach?'border-t-rose-500':'border-t-emerald-500'} flex flex-col justify-between">
+    <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Covenant Threshold</div>
+    <div class="mt-2">${hBreach ? '<span class="text-xs font-bold bg-rose-100 text-rose-800 px-2.5 py-1 rounded border border-rose-200"><i class="ti ti-shield-alert"></i> BREACH</span>':'<span class="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded border border-emerald-200"><i class="ti ti-shield-check"></i> PROTECTED</span>'}</div></div>
+    <div class="text-[10px] text-slate-400 font-semibold mt-2 uppercase tracking-wider">Headroom: ₹${r.hHd.toFixed(0)} Cr</div>
+  </div>`;
+}
+
+function updateSlider(key,val){
+  sliders[key]=val;
+  const fmts={ore:'$'+val,fx:'₹'+val.toFixed(2),frt:val.toFixed(2)+'×',sofr:val.toFixed(2)+'%',hr:val+'%'};
+  const el=document.getElementById('sv-'+key);
+  if(el) el.textContent=fmts[key];
+  if(activeTab==='sensitivity'){ buildLiveCards(); buildHeatmap(); buildHeatmap2(); }
+}
+
+renderTab();
+</script>
+</body>
+</html>
